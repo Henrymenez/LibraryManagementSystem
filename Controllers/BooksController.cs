@@ -24,7 +24,6 @@ namespace LibraryManagementSystem.Controllers
             _mapper = mapper;
         }
 
-        // POST /api/books
         [HttpPost]
         public async Task<ActionResult<BookReadDto>> Create(BookCreateDto dto)
         {
@@ -36,7 +35,7 @@ namespace LibraryManagementSystem.Controllers
             return CreatedAtAction(nameof(GetAll), new { id = book.Id }, result);
         }
 
-        // GET /api/books?search=...&pageNumber=1&pageSize=10
+       
         [HttpGet]
         public async Task<ActionResult<PagedResultDto<BookReadDto>>> GetAll(
             [FromQuery] string? search,
@@ -74,7 +73,16 @@ namespace LibraryManagementSystem.Controllers
             });
         }
 
-        // PUT /api/books/{id}
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> Update(int id)
+        {
+            var book = await _db.Books.SingleOrDefaultAsync(b => b.Id == id);
+            if (book is null) return NotFound(new { error = $"Book {id} not found." });
+
+            return Ok(book);
+        }
+
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, BookUpdateDto dto)
         {
@@ -84,10 +92,10 @@ namespace LibraryManagementSystem.Controllers
             _mapper.Map(dto, book);
             await _db.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(book);
         }
 
-        // DELETE /api/books/{id}
+ 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -97,7 +105,7 @@ namespace LibraryManagementSystem.Controllers
             _db.Books.Remove(book);
             await _db.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("deleted");
         }
     }
 
