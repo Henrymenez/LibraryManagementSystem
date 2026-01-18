@@ -30,6 +30,8 @@ namespace LibraryManagementSystem
             // Services
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddTransient<IBookService, BookService>();
+            builder.Services.AddTransient<IAuthService, AuthService>();
 
             // AutoMapper
             builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -94,9 +96,9 @@ namespace LibraryManagementSystem
             // Configure the HTTP request pipeline.
             //if (app.Environment.IsDevelopment())
             //{
-                app.UseSwagger();
-                app.UseSwaggerUI();
-           // }
+            app.UseSwagger();
+            app.UseSwaggerUI();
+            // }
 
             app.UseHttpsRedirection();
 

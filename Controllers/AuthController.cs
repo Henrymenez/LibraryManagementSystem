@@ -1,58 +1,40 @@
-﻿using LibraryManagementSystem.Data;
-using LibraryManagementSystem.Dtos.Auth;
-using LibraryManagementSystem.Entities;
+﻿using LibraryManagementSystem.Dtos.Auth;
 using LibraryManagementSystem.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LibraryManagementSystem.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly IPasswordHasher _hasher;
-    private readonly IJwtTokenService _jwt;
+    private readonly IAuthService authService;
 
-    public AuthController(AppDbContext db, IPasswordHasher hasher, IJwtTokenService jwt)
+    public AuthController(IAuthService authService)
     {
-        _db = db;
-        _hasher = hasher;
-        _jwt = jwt;
+        this.authService = authService;
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequestDto dto)
     {
-        var exists = await _db.Users.AnyAsync(u => u.Username == dto.Username);
-        if (exists) return Conflict(new { error = "Username already exists." });
+        var result = await authService.Register(dto);
 
-        _hasher.CreatePasswordHash(dto.Password, out var hash, out var salt);
-
-        var user = new User
+        if (!result.ISuccessful)
         {
-            Username = dto.Username,
-            PasswordHash = hash,
-            PasswordSalt = salt
-        };
-
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
-
-        return StatusCode(StatusCodes.Status201Created);
+            return BadRequest(result);
+        }
+        return StatusCode(StatusCodes.Status201Created, result);
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login(LoginRequestDto dto)
     {
-        var user = await _db.Users.SingleOrDefaultAsync(u => u.Username == dto.Username);
-        if (user is null) return Unauthorized(new { error = "Invalid credentials." });
-
-        var ok = _hasher.VerifyPassword(dto.Password, user.PasswordHash, user.PasswordSalt);
-        if (!ok) return Unauthorized(new { error = "Invalid credentials." });
-
-        var token = _jwt.CreateToken(user);
-        return Ok(new AuthResponseDto { Token = token });
+        var result = await authService.Login(dto);
+        if (!result.ISuccessful)
+        {
+            return Unauthorized(result);
+        }
+        return Ok(result);
     }
 
 }
